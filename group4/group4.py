@@ -12,7 +12,7 @@ from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 
 
-class AwesomeNegotiator(SAONegotiator):
+class Group4(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
     """
@@ -130,4 +130,4 @@ class AwesomeNegotiator(SAONegotiator):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(AwesomeNegotiator, small=True)
+    run_a_tournament(Group4, small=True)
