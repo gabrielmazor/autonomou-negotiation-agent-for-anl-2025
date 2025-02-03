@@ -144,7 +144,8 @@ class Group4(SAONegotiator):
 
         Returns: The counter offer as Outcome.
         """
-        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp)
+
+        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp) 
 
         if self.next_offer is not None:
             return self.next_offer
@@ -153,7 +154,7 @@ class Group4(SAONegotiator):
             if self.ufun(self.pareto_outcomes[0]) < treshold:
                 return self.ufun.best()
             else:
-                return min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-treshold))
+                return min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-treshold)) # append those to the list
             
         # if no joint outcomes, return the offer best for us
         offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
@@ -197,7 +198,7 @@ class Group4(SAONegotiator):
                 self.exp = avg + 0.5
             else:
                 self.opponent_strategy = "Boulware"
-                self.exp = 17.5
+                self.exp = 17.5 * (1 - state.relative_time)
 
         else:
             self.opponent_reserved_value = min(self.opponent_ufuns) / 2

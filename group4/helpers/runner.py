@@ -7,9 +7,9 @@ You only need to change the name of the class implementing your agent at the top
 
 def run_a_tournament(
     TestedNegotiator,
-    n_repetitions=1, #5,
+    n_repetitions=5,
     n_outcomes=1000,
-    n_scenarios=2, #10,
+    n_scenarios=10,
     debug=False,
     nologs=False,
     small=False,
