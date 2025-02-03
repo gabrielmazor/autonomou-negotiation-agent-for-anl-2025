@@ -7,9 +7,9 @@ You only need to change the name of the class implementing your agent at the top
 
 def run_a_tournament(
     TestedNegotiator,
-    n_repetitions=5,
+    n_repetitions=1, #5,
     n_outcomes=1000,
-    n_scenarios=10,
+    n_scenarios=2, #10,
     debug=False,
     nologs=False,
     small=False,
@@ -45,6 +45,7 @@ def run_a_tournament(
     from anl.anl2024.negotiators import Conceder, Boulware
     from negmas.helpers import humanize_time, unique_name
     from rich import print
+    from ..scochan import Shochan
 
     start = time.perf_counter()
     name = (

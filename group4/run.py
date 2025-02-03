@@ -4,6 +4,7 @@ from negmas.sao import SAOMechanism
 from anl.anl2024.runner import mixed_scenarios
 from anl.anl2024.negotiators.builtins import Linear, Conceder, Boulware
 from group4 import Group4
+from scochan import Shochan
 
 # create a scenario
 s = mixed_scenarios(1)[0]
@@ -20,6 +21,7 @@ session.add(
     , ufun=s.ufuns[0]
 )
 # session.add(Conceder(name="Conceder"), ufun=s.ufuns[1])
+# session.add(Linear(name="Linear"), ufun=s.ufuns[1])
 session.add(Boulware(name="Boulware"), ufun=s.ufuns[1])
 # run the negotiation and plot the results
 session.run()

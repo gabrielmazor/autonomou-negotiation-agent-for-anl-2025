@@ -13,7 +13,6 @@ from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 from negmas.preferences import pareto_frontier
 
-
 class Group4(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
@@ -33,12 +32,13 @@ class Group4(SAONegotiator):
             - We use it to save a list of all rational outcomes.
 
         """
-        self.exp = 2.0
+        self.exp = 17.5
         self.offers = []
         self.opponent_ufuns = []
         self.opponent_ufuns_times = []
         self.opponent_exp = []
         self.opponent_strategy = None
+        self.next_offer = None
         self.joint_utils = []
         self.pareto_outcomes = []
 
@@ -52,10 +52,14 @@ class Group4(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
+        self.nash = None
+        self.kalai = None
+
         pareto_utils, pareto_idx = pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes, sort_by_welfare=True)
 
         if pareto_idx:
             self.pareto_outcomes = [self.rational_outcomes[i] for i in pareto_idx]
+            self.pareto_outcomes.sort(key=lambda o: self.ufun(o), reverse=True)
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.opponent_outcomes_reserved_value = self.ufun.reserved_value
@@ -83,6 +87,14 @@ class Group4(SAONegotiator):
 
         self.update_partner_reserved_value(state)
 
+        e = 17.5
+        
+        # tresh = aspiration_function(
+        #     state.relative_time, 1.0, self.ufun.reserved_value, e
+        # )
+
+        # self.exp = e + (1.0 - tresh) * 100
+
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
             return SAOResponse(ResponseType.END_NEGOTIATION, None)
@@ -103,11 +115,26 @@ class Group4(SAONegotiator):
         """
         assert self.ufun
 
+        if state.relative_time < 0.9:
+            return False
+
         offer = state.current_offer
         treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp)
         
+        self.next_offer = None
         if self.ufun(offer) >= treshold:
-            return True
+            if offer in self.pareto_outcomes:
+                return True
+            else:
+                if self.pareto_outcomes:
+                    closest = min(
+                        self.pareto_outcomes,
+                        key = lambda o: abs(self.opponent_ufun(o) - self.opponent_ufun(offer))
+                    )
+                    if self.ufun(offer) >= treshold:
+                        if self.ufun(offer) >= self.ufun(closest):
+                            return True
+                        self.next_offer = closest
         return False
 
     def bidding_strategy(self, state: SAOState) -> Outcome | None:
@@ -117,7 +144,17 @@ class Group4(SAONegotiator):
 
         Returns: The counter offer as Outcome.
         """
+        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp)
 
+        if self.next_offer is not None:
+            return self.next_offer
+            
+        if self.pareto_outcomes:
+            if self.ufun(self.pareto_outcomes[0]) < treshold:
+                return self.ufun.best()
+            else:
+                return min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-treshold))
+            
         # if no joint outcomes, return the offer best for us
         offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
         self.offers.append(offer)
@@ -153,10 +190,14 @@ class Group4(SAONegotiator):
             self.opponent_exp.append(optimal_vals[0])
 
             # classify the opponent's strategy based on the mean of the last 5 exp values
-            if np.mean(self.opponent_exp[-5:]) < 1.0:
+            avg = np.mean(self.opponent_exp[-5:])
+            a = 0.1 * abs(self.exp - avg)
+            if avg < 1.0:
                 self.opponent_strategy = "Conceder"
+                self.exp = avg + 0.5
             else:
                 self.opponent_strategy = "Boulware"
+                self.exp = 17.5
 
         else:
             self.opponent_reserved_value = min(self.opponent_ufuns) / 2
