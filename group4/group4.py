@@ -119,6 +119,7 @@ class Group4(SAONegotiator):
         if offer is None:
             return
         
+        last_rv = self.opponent_reserved_value
         # update the opponent's ufun and the time it was updated
         self.opponent_ufuns.append(self.opponent_ufun(offer))
         self.opponent_ufuns_times.append(state.relative_time)
@@ -126,14 +127,13 @@ class Group4(SAONegotiator):
         bounds = ((0.2, 0.0), (5.0, min(self.opponent_ufuns)))
 
         # fitting curve to the opponent's ufuns
-        optimal_vals, _ = curve_fit(
-            lambda x, e, rv: aspiration_function(x, self.opponent_ufuns[0], rv, e),
-            self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
-        )
-
-        # update the opponent's reserved value based on the fitted curve
-        last_rv = self.opponent_reserved_value
-        self.opponent_reserved_value = optimal_vals[1]
+        if(len(self.opponent_ufuns) > 3):
+            optimal_vals, _ = curve_fit(
+                lambda x, e, rv: aspiration_function(x, self.opponent_ufuns[0], rv, e),
+                self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
+            )
+            # update the opponent's reserved value based on the fitted curve
+            self.opponent_reserved_value = optimal_vals[1]
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         if last_rv < self.opponent_reserved_value:
