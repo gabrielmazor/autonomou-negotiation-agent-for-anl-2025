@@ -7,7 +7,8 @@ This code is free to use or update given that proper attribution is given to
 the authors and the ANAC 2024 ANL competition.
 """
 import random
-
+from scipy.optimize import curve_fit
+import numpy as np
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 
@@ -20,6 +21,8 @@ class Group4(SAONegotiator):
     rational_outcomes = tuple()
 
     partner_reserved_value = 0
+    opponent_ufuns = []
+    opponent_ufuns_times = []
 
     def on_preferences_changed(self, changes):
         """
@@ -103,7 +106,7 @@ class Group4(SAONegotiator):
         # The opponent's ufun can be accessed using self.opponent_ufun, which is not used yet.
 
         return random.choice(self.rational_outcomes)
-
+    
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
         Using the information of the new offers, you can update the estimated reservation value of the opponent.
@@ -113,9 +116,21 @@ class Group4(SAONegotiator):
         assert self.ufun and self.opponent_ufun
 
         offer = state.current_offer
+        if offer is None:
+            return
+        
+        # update the opponent's ufun and the time it was updated
+        self.opponent_ufuns.append(self.opponent_ufun(offer))
+        self.opponent_ufuns_times.append(state.relative_time)
 
-        if self.opponent_ufun(offer) < self.partner_reserved_value:
-            self.partner_reserved_value = float(self.opponent_ufun(offer)) / 2
+        bounds = ((0.2, 0.0), (5.0, min(self.opponent_ufuns)))
+
+        optimal_vals, _ = curve_fit(
+            lambda x, e, rv: aspiration_function(x, self.opponent_ufuns[0], rv, e),
+            self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
+        )
+        self.opponent_ufun.reserved_value = optimal_vals[1]
+        print(f"Opponent reserved value estimation: {optimal_vals[1]}")
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         # Watch out: if the reserved value decreases, this will not add any outcomes.
@@ -124,6 +139,10 @@ class Group4(SAONegotiator):
             for _ in self.rational_outcomes
             if self.opponent_ufun(_) > self.partner_reserved_value
         ]
+
+def aspiration_function(t, mx, rv, e):
+    """A monotonically decrasing curve starting at mx (t=0) and ending at rv (t=1)"""
+    return (mx-rv) * (1.0 -np.power(t, e)) + rv
 
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
