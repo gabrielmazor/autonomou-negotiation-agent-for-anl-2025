@@ -19,8 +19,8 @@ session.add(
                 private_info=dict(opponent_ufun=ufuns0[1]))
     , ufun=s.ufuns[0]
 )
-session.add(Conceder(name="Conceder"), ufun=s.ufuns[1])
-# session.add(Boulware(name="Boulware"), ufun=s.ufuns[1])
+# session.add(Conceder(name="Conceder"), ufun=s.ufuns[1])
+session.add(Boulware(name="Boulware"), ufun=s.ufuns[1])
 # run the negotiation and plot the results
 session.run()
 session.plot()

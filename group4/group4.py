@@ -40,7 +40,7 @@ class Group4(SAONegotiator):
         self.opponent_exp = []
         self.opponent_strategy = None
         self.joint_utils = []
-        self.pareto = []
+        self.pareto_outcomes = []
 
         # If there a no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -51,6 +51,11 @@ class Group4(SAONegotiator):
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
             if self.ufun(_) > self.ufun.reserved_value
         ]
+
+        pareto_utils, pareto_idx = pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes, sort_by_welfare=True)
+
+        if pareto_idx:
+            self.pareto_outcomes = [self.rational_outcomes[i] for i in pareto_idx]
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.opponent_outcomes_reserved_value = self.ufun.reserved_value
@@ -114,7 +119,7 @@ class Group4(SAONegotiator):
         """
 
         # if no joint outcomes, return the offer best for us
-        offer = self.pareto[0] if self.pareto else self.ufun.best()
+        offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
         self.offers.append(offer)
         return offer 
     
@@ -172,19 +177,13 @@ class Group4(SAONegotiator):
             ]
         
         # get a list of both outcomes intersection
-        self.joint_outcomes = list(set(self.rational_outcomes) & set(self.opponent_outcomes))
+        self.joint_outcomes = list(set(self.pareto_outcomes) & set(self.opponent_outcomes))
         
         if not self.joint_outcomes:
-            self.joint_outcomes = self.rational_outcomes
-
-        pareto_utils, pareto_idx = pareto_frontier([self.ufun, self.opponent_ufun], self.joint_outcomes, sort_by_welfare=True)
-        
-        if pareto_idx:
-            self.pareto = [self.joint_outcomes[i] for i in pareto_idx]
+            self.joint_outcomes = self.pareto_outcomes
 
         # sort the joint outcomes based on the utility function
         self.joint_outcomes.sort(key=lambda o: self.ufun(o), reverse=True)
-        self.joint_utils = [(float(self.ufun(o)), float(self.opponent_ufun(o)), o) for o in self.joint_outcomes]
 
 # Helper functions
 def aspiration_function(t, mx, rv, e):
