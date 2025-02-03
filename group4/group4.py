@@ -20,6 +20,7 @@ class Group4(SAONegotiator):
 
     rational_outcomes = tuple()
     opponent_outcomes = tuple()
+    joint_outcomes = tuple()
     opponent_reserved_value = 0.0
 
     def on_preferences_changed(self, changes):
@@ -31,10 +32,12 @@ class Group4(SAONegotiator):
             - We use it to save a list of all rational outcomes.
 
         """
+        self.exp = 2.0
         self.opponent_ufuns = []
         self.opponent_ufuns_times = []
         self.opponent_exp = []
         self.opponent_strategy = None
+        self.joint_utils = []
 
         # If there a no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -93,10 +96,12 @@ class Group4(SAONegotiator):
         assert self.ufun
 
         offer = state.current_offer
-
-        if self.ufun(offer) > (2 * self.ufun.reserved_value):
+        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp)
+        
+        if self.ufun(offer) >= treshold:
             return True
         return False
+        # this acceptance as it is now, doesn't consider the opponent's strategy, ufun or advantage. Concider adding
 
     def bidding_strategy(self, state: SAOState) -> Outcome | None:
         """
@@ -105,10 +110,16 @@ class Group4(SAONegotiator):
 
         Returns: The counter offer as Outcome.
         """
+        if state.relative_time > 0.5:
+            if self.joint_outcomes:
+                threshold = aspiration_function(state.relative_time, 1.0, self.opponent_reserved_value, self.exp)
+                last = len(self.joint_outcomes) - 1
+                idx = max(0, min(last, int(threshold * last)))
+                outcome = self.joint_outcomes[idx]
+                return outcome
 
-        # The opponent's ufun can be accessed using self.opponent_ufun, which is not used yet.
-
-        return random.choice(self.rational_outcomes)
+        # if no joint outcomes, return the offer best for us
+        return self.ufun.best() 
     
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
@@ -140,10 +151,13 @@ class Group4(SAONegotiator):
             self.opponent_exp.append(optimal_vals[0])
 
             # classify the opponent's strategy based on the mean of the last 5 exp values
+            lr = 0.1
             if np.mean(self.opponent_exp[-5:]) < 1.0:
                 self.opponent_strategy = "Conceder"
+                self.exp -= lr * self.opponent_exp[-1] if self.exp > self.opponent_exp[-1] else self.exp
             else:
                 self.opponent_strategy = "Boulware"
+                self.exp += lr * self.opponent_exp[-1] if self.exp < self.opponent_exp[-1] else self.exp
 
         else:
             self.opponent_reserved_value = min(self.opponent_ufuns) / 2
@@ -163,10 +177,18 @@ class Group4(SAONegotiator):
                 if self.opponent_ufun(_) > self.opponent_reserved_value
             ]
 
+        # get a list of both outcomes intersection
+        self.joint_outcomes = list(set(self.rational_outcomes) & set(self.opponent_outcomes))
+
+        # sort the joint outcomes based on the utility function
+        self.joint_outcomes.sort(key=lambda o: self.ufun(o), reverse=True)
+        self.joint_utils = [(float(self.ufun(o)), float(self.opponent_ufun(o)), o) for o in self.joint_outcomes]
+
+
 # Helper functions
-def aspiration_function(t, mx, rv, e):
-    """A monotonically decrasing curve starting at mx (t=0) and ending at rv (t=1)"""
-    return (mx-rv) * (1.0 -np.power(t, e)) + rv
+def aspiration_function(t, max, rv, e):
+    """A monotonically decrasing curve starting at max (t=0) and ending at rv (min) (t=1)"""
+    return (max-rv) * (1.0 -np.power(t, e)) + rv
 
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
