@@ -19,8 +19,8 @@ class Group4(SAONegotiator):
     """
 
     rational_outcomes = tuple()
-
-    partner_reserved_value = 0
+    opponent_outcomes = tuple()
+    opponent_reserved_value = 0
     opponent_ufuns = []
     opponent_ufuns_times = []
 
@@ -44,7 +44,7 @@ class Group4(SAONegotiator):
         ]
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
-        self.partner_reserved_value = self.ufun.reserved_value
+        self.opponent_outcomes_reserved_value = self.ufun.reserved_value
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -125,20 +125,30 @@ class Group4(SAONegotiator):
 
         bounds = ((0.2, 0.0), (5.0, min(self.opponent_ufuns)))
 
+        # fitting curve to the opponent's ufuns
         optimal_vals, _ = curve_fit(
             lambda x, e, rv: aspiration_function(x, self.opponent_ufuns[0], rv, e),
             self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
         )
-        self.opponent_ufun.reserved_value = optimal_vals[1]
-        print(f"Opponent reserved value estimation: {optimal_vals[1]}")
+
+        # update the opponent's reserved value based on the fitted curve
+        last_rv = self.opponent_reserved_value
+        self.opponent_reserved_value = optimal_vals[1]
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
-        # Watch out: if the reserved value decreases, this will not add any outcomes.
-        rational_outcomes = self.rational_outcomes = [
-            _
-            for _ in self.rational_outcomes
-            if self.opponent_ufun(_) > self.partner_reserved_value
-        ]
+        if last_rv < self.opponent_reserved_value:
+            # if rv decreased, filter from the complete outcome space
+            self.opponent_outcomes = [
+                _
+                for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
+                if self.opponent_ufun(_) > self.opponent_reserved_value
+            ]
+        else:
+            self.opponent_outcomes = [
+                _
+                for _ in self.opponent_outcomes
+                if self.opponent_ufun(_) > self.opponent_reserved_value
+            ]
 
 def aspiration_function(t, mx, rv, e):
     """A monotonically decrasing curve starting at mx (t=0) and ending at rv (t=1)"""
