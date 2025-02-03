@@ -42,7 +42,7 @@ def run_a_tournament(
         DEFAULT_TOURNAMENT_PATH,
         anl2024_tournament,
     )
-    from anl.anl2024.negotiators import Conceder
+    from anl.anl2024.negotiators import Conceder, Boulware
     from negmas.helpers import humanize_time, unique_name
     from rich import print
 

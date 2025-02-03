@@ -20,9 +20,7 @@ class Group4(SAONegotiator):
 
     rational_outcomes = tuple()
     opponent_outcomes = tuple()
-    opponent_reserved_value = 0
-    opponent_ufuns = []
-    opponent_ufuns_times = []
+    opponent_reserved_value = 0.0
 
     def on_preferences_changed(self, changes):
         """
@@ -33,6 +31,11 @@ class Group4(SAONegotiator):
             - We use it to save a list of all rational outcomes.
 
         """
+        self.opponent_ufuns = []
+        self.opponent_ufuns_times = []
+        self.opponent_exp = []
+        self.opponent_strategy = None
+
         # If there a no outcomes (should in theory never happen)
         if self.ufun is None:
             return
@@ -127,13 +130,23 @@ class Group4(SAONegotiator):
         bounds = ((0.2, 0.0), (5.0, min(self.opponent_ufuns)))
 
         # fitting curve to the opponent's ufuns
-        if(len(self.opponent_ufuns) > 3):
+        if(len(self.opponent_ufuns) > 5):
             optimal_vals, _ = curve_fit(
-                lambda x, e, rv: aspiration_function(x, self.opponent_ufuns[0], rv, e),
+                lambda t, e, rv: aspiration_function(t, self.opponent_ufuns[0], rv, e),
                 self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
             )
             # update the opponent's reserved value based on the fitted curve
             self.opponent_reserved_value = optimal_vals[1]
+            self.opponent_exp.append(optimal_vals[0])
+
+            # classify the opponent's strategy based on the mean of the last 5 exp values
+            if np.mean(self.opponent_exp[-5:]) < 1.0:
+                self.opponent_strategy = "Conceder"
+            else:
+                self.opponent_strategy = "Boulware"
+
+        else:
+            self.opponent_reserved_value = min(self.opponent_ufuns) / 2
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         if last_rv < self.opponent_reserved_value:
@@ -150,6 +163,7 @@ class Group4(SAONegotiator):
                 if self.opponent_ufun(_) > self.opponent_reserved_value
             ]
 
+# Helper functions
 def aspiration_function(t, mx, rv, e):
     """A monotonically decrasing curve starting at mx (t=0) and ending at rv (t=1)"""
     return (mx-rv) * (1.0 -np.power(t, e)) + rv
@@ -159,4 +173,4 @@ def aspiration_function(t, mx, rv, e):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(Group4, small=True)
+    run_a_tournament(Group4, small=True, debug=False)
