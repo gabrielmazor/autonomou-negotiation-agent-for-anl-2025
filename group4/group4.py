@@ -115,7 +115,7 @@ class Group4(SAONegotiator):
         """
         assert self.ufun
 
-        if state.relative_time < 0.9:
+        if state.relative_time < 0.9: # is needed? isn't treshold enough? 
             return False
 
         offer = state.current_offer
@@ -191,6 +191,7 @@ class Group4(SAONegotiator):
             self.opponent_exp.append(optimal_vals[0])
 
             # classify the opponent's strategy based on the mean of the last 5 exp values
+            treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp) 
             avg = np.mean(self.opponent_exp[-5:])
             a = 0.1 * abs(self.exp - avg)
             if avg < 1.0:
@@ -198,7 +199,7 @@ class Group4(SAONegotiator):
                 self.exp = avg + 0.5
             else:
                 self.opponent_strategy = "Boulware"
-                self.exp = 17.5 * (1 - state.relative_time)
+                self.exp = 35
 
         else:
             self.opponent_reserved_value = min(self.opponent_ufuns) / 2
@@ -236,4 +237,4 @@ def aspiration_function(t, mx, rv, e):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(Group4, small=True, debug=True)
+    run_a_tournament(Group4, small=False, debug=True)
