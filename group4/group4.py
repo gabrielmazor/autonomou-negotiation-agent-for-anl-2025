@@ -11,7 +11,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
-from negmas.preferences import pareto_frontier
+from negmas.preferences import pareto_frontier, kalai_points, nash_points
 
 class Group4(SAONegotiator):
     """
@@ -46,20 +46,31 @@ class Group4(SAONegotiator):
         if self.ufun is None:
             return
 
+        # Get all outcomes that above our reserved value
         self.rational_outcomes = [
             _
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
-        self.nash = None
-        self.kalai = None
-
+        # Get all rational outcomes that on pareto frontier
         pareto_utils, pareto_idx = pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes, sort_by_welfare=True)
-
+        
         if pareto_idx:
             self.pareto_outcomes = [self.rational_outcomes[i] for i in pareto_idx]
             self.pareto_outcomes.sort(key=lambda o: self.ufun(o), reverse=True)
+
+        # find the nash and kalai points and their utilities
+        nash = nash_points([self.ufun, self.opponent_ufun], pareto_utils)
+        kalai = kalai_points([self.ufun, self.opponent_ufun], pareto_utils)
+        nash_idx = nash[0][1]
+        kalai_idx = kalai[0][1]
+
+        # save the min offer between kalai or nash
+        self.min_offer = (
+            self.pareto_outcomes[kalai_idx] if self.ufun(self.pareto_outcomes[kalai_idx]) < self.ufun(self.pareto_outcomes[nash_idx])
+            else self.pareto_outcomes[nash_idx]
+        )
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.opponent_outcomes_reserved_value = self.ufun.reserved_value
@@ -84,16 +95,8 @@ class Group4(SAONegotiator):
               - If this is `None`, you are starting the negotiation now (no offers yet).
         """
         offer = state.current_offer
-
+        self.treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp) 
         self.update_partner_reserved_value(state)
-
-        e = 17.5
-        
-        # tresh = aspiration_function(
-        #     state.relative_time, 1.0, self.ufun.reserved_value, e
-        # )
-
-        # self.exp = e + (1.0 - tresh) * 100
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -114,24 +117,33 @@ class Group4(SAONegotiator):
         Returns: a bool.
         """
         assert self.ufun
-
-        if state.relative_time < 0.9: # is needed? isn't treshold enough? 
-            return False
-
         offer = state.current_offer
-        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp)
-        
         self.next_offer = None
-        if self.ufun(offer) >= treshold:
+
+        # rejecting all offers before 90% of the time
+        if state.relative_time < 0.9:
+            if self.ufun(offer) - self.ufun.reserved_value > (self.opponent_ufun(offer) - self.opponent_reserved_value) * 1.5:
+                if abs(self.ufun(offer) - self.ufun(min(self.offers))) < 0.1:
+                    return True
+            return False
+        
+        if self.ufun(offer) < self.ufun(self.min_offer):
+            if self.nmi.n_steps - state.step > 10:
+                return False
+
+        # if offer above tresh, and on pareto -> accept
+        if self.ufun(offer) >= self.treshold:
             if offer in self.pareto_outcomes:
                 return True
             else:
+                # if pareto exists, find the closest offer to the opponent's ufun
                 if self.pareto_outcomes:
                     closest = min(
                         self.pareto_outcomes,
                         key = lambda o: abs(self.opponent_ufun(o) - self.opponent_ufun(offer))
                     )
-                    if self.ufun(offer) >= treshold:
+                    # if the closest offer is above the treshold but worse for us, accept the original, else reject and counter offer with closest
+                    if self.ufun(closest) >= self.treshold:
                         if self.ufun(offer) >= self.ufun(closest):
                             return True
                         self.next_offer = closest
@@ -144,20 +156,56 @@ class Group4(SAONegotiator):
 
         Returns: The counter offer as Outcome.
         """
+        # offer = None
+        # if self.next_offer is not None:
+        #     offer = self.next_offer
+        #     return self.next_offer
+            
+        # if self.pareto_outcomes:
+        #     if self.ufun(self.pareto_outcomes[0]) < self.treshold:
+        #         offer = self.ufun.best()
+        #     else:
+        #         offer = min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-self.treshold)) 
+            
+        # # if no joint outcomes, return the offer best for us
+        # if offer == None:
+        #     offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
+        
+        # # if the offer is below nash and kalai, return the min_offer if there are more than 10 steps left.
+        # if self.ufun(offer) < self.ufun(self.min_offer):
+        #     if self.nmi.n_steps - state.step > 10:
+        #         offer = self.min_offer
+        
+        # # Get offer that is closest to opps min offer, AND above treshold, kalai and nash
+        # # to do to do
 
-        treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp) 
+        # self.offers.append(offer)
+        # return offer 
 
+## replaching all with joint_outcomes instead (extra thought - > maybe itsalright to propose bids lower than the opps RV as we are playing though)
+        offer = None
         if self.next_offer is not None:
+            offer = self.next_offer
             return self.next_offer
             
-        if self.pareto_outcomes:
-            if self.ufun(self.pareto_outcomes[0]) < treshold:
-                return self.ufun.best()
+        if self.joint_outcomes:
+            if self.ufun(self.joint_outcomes[0]) < self.treshold:
+                offer = self.ufun.best()
             else:
-                return min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-treshold)) # append those to the list
+                offer = min(self.joint_outcomes, key=lambda o: abs(self.ufun(o)-self.treshold)) 
             
         # if no joint outcomes, return the offer best for us
-        offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
+        if offer == None:
+            offer = self.joint_outcomes[0] if self.joint_outcomes else self.ufun.best()
+        
+        # if the offer is below nash and kalai, return the min_offer if there are more than 10 steps left.
+        if self.ufun(offer) < self.ufun(self.min_offer):
+            if self.nmi.n_steps - state.step > 10:
+                offer = self.min_offer
+        
+        # Get offer that is closest to opps min offer, AND above treshold, kalai and nash
+        # to do to do
+
         self.offers.append(offer)
         return offer 
     
@@ -186,20 +234,18 @@ class Group4(SAONegotiator):
                 lambda t, e, rv: aspiration_function(t, self.opponent_ufuns[0], rv, e),
                 self.opponent_ufuns_times, self.opponent_ufuns, bounds=bounds
             )
-            # update the opponent's reserved value based on the fitted curve
-            self.opponent_reserved_value = optimal_vals[1]
+            # update the opponent's reserved value based on min between the fitted curve and the min of the opponent's ufuns. min is mainly for fallback.
+            self.opponent_reserved_value = min(optimal_vals[1], min(self.opponent_ufuns))
             self.opponent_exp.append(optimal_vals[0])
 
             # classify the opponent's strategy based on the mean of the last 5 exp values
-            treshold = aspiration_function(state.relative_time, 1.0, self.ufun.reserved_value, self.exp) 
             avg = np.mean(self.opponent_exp[-5:])
-            a = 0.1 * abs(self.exp - avg)
             if avg < 1.0:
-                self.opponent_strategy = "Conceder"
-                self.exp = avg + 0.5
+                self.opponent_strategy = "Conceder" # is opp strategy needed?
+                self.exp = max(avg + 1, self.exp * 0.975)
             else:
                 self.opponent_strategy = "Boulware"
-                self.exp = 35
+                self.exp = avg * 7
 
         else:
             self.opponent_reserved_value = min(self.opponent_ufuns) / 2
@@ -219,6 +265,8 @@ class Group4(SAONegotiator):
                 if self.opponent_ufun(_) > self.opponent_reserved_value
             ]
         
+        # HOW DO WE USE THE JOINT OUTCOMES? Should we?
+
         # get a list of both outcomes intersection
         self.joint_outcomes = list(set(self.pareto_outcomes) & set(self.opponent_outcomes))
         
@@ -237,4 +285,4 @@ def aspiration_function(t, mx, rv, e):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(Group4, small=False, debug=True)
+    run_a_tournament(Group4, small=True, debug=True)
