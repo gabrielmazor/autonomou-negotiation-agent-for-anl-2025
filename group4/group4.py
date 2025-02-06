@@ -6,7 +6,7 @@
 This code is free to use or update given that proper attribution is given to
 the authors and the ANAC 2024 ANL competition.
 """
-import random
+
 from scipy.optimize import curve_fit
 import numpy as np
 from negmas.outcomes import Outcome
@@ -156,47 +156,20 @@ class Group4(SAONegotiator):
 
         Returns: The counter offer as Outcome.
         """
-        # offer = None
-        # if self.next_offer is not None:
-        #     offer = self.next_offer
-        #     return self.next_offer
-            
-        # if self.pareto_outcomes:
-        #     if self.ufun(self.pareto_outcomes[0]) < self.treshold:
-        #         offer = self.ufun.best()
-        #     else:
-        #         offer = min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-self.treshold)) 
-            
-        # # if no joint outcomes, return the offer best for us
-        # if offer == None:
-        #     offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
-        
-        # # if the offer is below nash and kalai, return the min_offer if there are more than 10 steps left.
-        # if self.ufun(offer) < self.ufun(self.min_offer):
-        #     if self.nmi.n_steps - state.step > 10:
-        #         offer = self.min_offer
-        
-        # # Get offer that is closest to opps min offer, AND above treshold, kalai and nash
-        # # to do to do
-
-        # self.offers.append(offer)
-        # return offer 
-
-## replaching all with joint_outcomes instead (extra thought - > maybe itsalright to propose bids lower than the opps RV as we are playing though)
         offer = None
         if self.next_offer is not None:
             offer = self.next_offer
             return self.next_offer
             
-        if self.joint_outcomes:
-            if self.ufun(self.joint_outcomes[0]) < self.treshold:
+        if self.pareto_outcomes:
+            if self.ufun(self.pareto_outcomes[0]) < self.treshold:
                 offer = self.ufun.best()
             else:
-                offer = min(self.joint_outcomes, key=lambda o: abs(self.ufun(o)-self.treshold)) 
+                offer = min(self.pareto_outcomes, key=lambda o: abs(self.ufun(o)-self.treshold)) 
             
         # if no joint outcomes, return the offer best for us
         if offer == None:
-            offer = self.joint_outcomes[0] if self.joint_outcomes else self.ufun.best()
+            offer = self.pareto_outcomes[0] if self.pareto_outcomes else self.ufun.best()
         
         # if the offer is below nash and kalai, return the min_offer if there are more than 10 steps left.
         if self.ufun(offer) < self.ufun(self.min_offer):
