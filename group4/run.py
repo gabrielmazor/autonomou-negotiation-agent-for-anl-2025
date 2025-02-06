@@ -4,7 +4,6 @@ from negmas.sao import SAOMechanism
 from anl.anl2024.runner import mixed_scenarios
 from anl.anl2024.negotiators.builtins import Linear, Conceder, Boulware
 from group4 import Group4
-from scochan import Shochan
 import random
 
 plt.tight_layout()
