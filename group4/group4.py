@@ -141,8 +141,6 @@ class Group4(SAONegotiator):
 
         # if offer above tresh, and on pareto -> accept
         if self.ufun(offer) >= self.treshold:
-            if self.nmi.n_steps - state.step <= 1:
-                return True
             if offer in self.pareto_outcomes:
                 return True
             else:
@@ -157,6 +155,11 @@ class Group4(SAONegotiator):
                         if self.ufun(offer) >= self.ufun(closest):
                             return True
                         self.next_offer = closest
+
+        # Accepting offers above our reserved value at the last rounds
+        if self.ufun(offer) > self.ufun.reserved_value:
+            if self.nmi.n_steps - state.step <= 1:
+                return True
         
         # reject everything else                        
         return False
