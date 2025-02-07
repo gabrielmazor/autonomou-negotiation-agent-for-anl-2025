@@ -39,7 +39,7 @@ class Group4(SAONegotiator):
         self.opponent_ufuns_times = []
         self.opponent_exp = []
         self.next_offer = None
-        self.joint_utils = []
+        self.joint_utils = [] # check if used
         self.pareto_outcomes = []
         self.min_offer = None
 
@@ -141,6 +141,8 @@ class Group4(SAONegotiator):
 
         # if offer above tresh, and on pareto -> accept
         if self.ufun(offer) >= self.treshold:
+            if self.nmi.n_steps - state.step <= 1:
+                return True
             if offer in self.pareto_outcomes:
                 return True
             else:
@@ -242,7 +244,7 @@ class Group4(SAONegotiator):
             self.opponent_reserved_value = min(optimal_vals[1], min(self.opponent_ufuns))
             self.opponent_exp.append(optimal_vals[0])
             
-            # tic tac toe strategy - adjust our exp based on the opponent's behavior, with the average of the last 5 exp values
+            # tit for tat strategy - adjust our exp based on the opponent's behavior, with the average of the last 5 exp values
 
             avg = np.mean(self.opponent_exp[-5:])
             if avg < 1.0:
