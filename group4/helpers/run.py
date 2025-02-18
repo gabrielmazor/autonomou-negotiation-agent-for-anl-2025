@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from negmas.sao import SAOMechanism
 from anl.anl2024.runner import mixed_scenarios
 from anl.anl2024.negotiators.builtins import Linear, Conceder, Boulware
-from group4 import Group4
+from group4.group4 import Group4
 import random
 
 plt.tight_layout()
