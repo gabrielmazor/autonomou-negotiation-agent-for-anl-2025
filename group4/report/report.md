@@ -27,6 +27,9 @@ Where `t` is relative time [0,1], `mx` is maximal possible utility, `rv` is the 
 
 
 ### Acceptance Strategy
+```python
+def acceptance_strategy(self, state: SAOState) -> bool:
+```
 Through testing the negotiation platform, we identified a clear pattern.
 After testing and playing with the negotiation platform, we observed a clear pattern: regardless of opponents’ strategy, they tend to concede over time, which results in better offers for our utility as the negotiation progresses. Accepting early offers leads to suboptimal outcomes, as we miss out on potentially better agreements later on. 
 
@@ -62,6 +65,9 @@ Our acceptance strategy function was built from scratch, following the logic bel
     - In the last two steps, we prioritize securing agreements above our reserved value. To avoid unnecessary rejection, we **accept** any offer above our reserved value.
 
 ### Bidding Strategy
+```python
+def update_partner_reserved_value(self, state: SAOState) -> None:
+```
 
 ### Opponent Model
 

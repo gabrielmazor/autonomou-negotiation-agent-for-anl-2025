@@ -39,7 +39,6 @@ class Group4(SAONegotiator):
         self.opponent_ufuns_times = []
         self.opponent_exp = []
         self.next_offer = None
-        self.joint_utils = [] # check if used
         self.pareto_outcomes = []
         self.min_offer = None
 

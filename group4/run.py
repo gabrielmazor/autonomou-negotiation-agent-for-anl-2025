@@ -30,4 +30,4 @@ for i in range(40):
     # run the negotiation and plot the results
     session.run()
     session.plot()
-    plt.savefig(f"{i+1}_group4_vs_{opp.__name__}.png")
+    plt.savefig(f"{i+1}_group4_vs_{opp.__name__}.png", bbox_inches='tight')
