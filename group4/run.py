@@ -4,11 +4,14 @@ from negmas.sao import SAOMechanism
 from anl.anl2024.runner import mixed_scenarios
 from anl.anl2024.negotiators.builtins import Linear, Conceder, Boulware
 from group4 import Group4
+from hard_chaos import HardChaosNegotiator
+from shochan import Shochan
+from missg import MissG
 import random
 
 plt.tight_layout()
 
-for i in range(40):
+for i in range(10):
     # create a scenario
     s = mixed_scenarios(1)[0]
     
@@ -24,10 +27,10 @@ for i in range(40):
     session.add(Group4(name="Group4", private_info=dict(opponent_ufun=ufuns0[1])), ufun=s.ufuns[0])
     
     # add a random opponent
-    opp = random.choice([Linear, Conceder, Boulware])
-    session.add(opp(name=str(opp.__name__)), ufun=s.ufuns[1])
+    # Ensure opponent_ufun is passed correctly
+    session.add(MissG(name="MissG", private_info=dict(opponent_ufun=ufuns0[0])), ufun=s.ufuns[1])
     
     # run the negotiation and plot the results
     session.run()
     session.plot()
-    plt.savefig(f"{i+1}_group4_vs_{opp.__name__}.png", bbox_inches='tight')
+    plt.savefig(f"{i+1}_group4_vs_MissG.png", bbox_inches='tight')
