@@ -287,4 +287,4 @@ def aspiration_function(t, mx, rv, e):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(Group4, small=False, debug=True)
+    run_a_tournament(Group4, small=True, debug=True)
