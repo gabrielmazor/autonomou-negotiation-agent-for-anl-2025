@@ -8,7 +8,7 @@ import random
 
 plt.tight_layout()
 
-for i in range(40):
+for i in range(10):
     # create a scenario
     s = mixed_scenarios(1)[0]
     
@@ -30,4 +30,4 @@ for i in range(40):
     # run the negotiation and plot the results
     session.run()
     session.plot()
-    plt.savefig(f"{i+1}_group4_vs_{opp.__name__}.png", bbox_inches='tight')
+    plt.savefig(f"{i+1}_skelaton_vs_{opp.__name__}.png", bbox_inches='tight')
