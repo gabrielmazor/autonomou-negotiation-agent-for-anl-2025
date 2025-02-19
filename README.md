@@ -26,8 +26,8 @@ To run your the, the only required steps are the following:
 2. [required] **Install anl**
     > pip install anl
 
-3. [recommended] You can run a simple tournament against basic
-   strategies by running ``maxpareto.py`` from the command line (in this folder):
+3. You can run a simple tournament against basic
+   strategies by running from the command line (in this folder):
 
     > python -m agnet.maxpareto
 
