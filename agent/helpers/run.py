@@ -12,7 +12,7 @@ for i in range(40):
     # create a scenario
     s = mixed_scenarios(1)[0]
     
-    # copy ufuns and set rv to 0 in the copies
+    # copy ufuns and set rv to 0 in the copies 
     ufuns0 = [copy.deepcopy(u) for u in s.ufuns]
     for u in ufuns0:
         u.reserved_value = 0.0
