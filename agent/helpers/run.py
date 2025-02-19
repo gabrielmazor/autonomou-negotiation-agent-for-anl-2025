@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from negmas.sao import SAOMechanism
 from anl.anl2024.runner import mixed_scenarios
 from anl.anl2024.negotiators.builtins import Linear, Conceder, Boulware
-from group4.group4 import Group4
+from agent.maxpareto import MaxPareto
 import random
 
 plt.tight_layout()
@@ -21,7 +21,7 @@ for i in range(40):
     session = SAOMechanism(n_steps=1000, outcome_space=s.outcome_space)
     
     # add negotiators. Remember to pass the opponent_ufun in private_info
-    session.add(Group4(name="Group4", private_info=dict(opponent_ufun=ufuns0[1])), ufun=s.ufuns[0])
+    session.add(MaxPareto(name="MaxPareto", private_info=dict(opponent_ufun=ufuns0[1])), ufun=s.ufuns[0])
     
     # add a random opponent
     opp = random.choice([Linear, Conceder, Boulware])
@@ -30,4 +30,4 @@ for i in range(40):
     # run the negotiation and plot the results
     session.run()
     session.plot()
-    plt.savefig(f"{i+1}_group4_vs_{opp.__name__}.png", bbox_inches='tight')
+    plt.savefig(f"{i+1}_MaxPareto_vs_{opp.__name__}.png", bbox_inches='tight')
