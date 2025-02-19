@@ -13,7 +13,7 @@ from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 from negmas.preferences import pareto_frontier, kalai_points, nash_points
 
-class Group4(SAONegotiator):
+class MaxPareto(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
     """
@@ -287,4 +287,4 @@ def aspiration_function(t, mx, rv, e):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(Group4, small=True, debug=True)
+    run_a_tournament(MaxPareto, small=True, debug=False)
