@@ -35,7 +35,9 @@ To run your the, the only required steps are the following:
 We implemented a **Tit-for-Tat** negotiation strategy, enabling our agent to adapt based on the opponent’s perceived behavior while maximizing utility through structured decision-making. This is achieved using a time-dependent aspiration function and an opponent modeling mechanism to refine bidding and acceptance decisions.
 <br><br>
 A core component of this strategy is the aspiration function, which dictates how offers evolve over time:
-$$ asp(t) = (mx-rv)(1-t^e)+rv $$
+```math
+asp(t) = (mx-rv)(1-t^e)+rv
+```
 Unlike static threshold approaches, our aspiration function dynamically adjusts its concession based on the opponent’s strategy. Against cooperative opponents, it maintains a high threshold for longer, conceding gradually. Against aggressive or defecting opponents, it delays concessions, ensuring competitive offers before strategically lowering expectations as the deadline approaches. This adaptation allows the agent to optimize offers rather than follow a fixed negotiation path.
 <br><br>
 Our acceptance strategy is rarely accepting offers in the first 90% of the negotiation. This allows the agent to gather information and maintain a firm stance. As the deadline nears, the acceptance threshold gradually decreases, ensuring flexible decision-making while securing an agreement before time runs out.
