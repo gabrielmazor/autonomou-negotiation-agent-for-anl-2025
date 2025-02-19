@@ -62,7 +62,7 @@ Reject nearly all offers, except those providing at least 1.5 times advantage to
 
 **Critical Segment (t > 0.9):**
 
-- Reject offers below min(Nash, Kalai).
+- Reject offers below `min(Nash, Kalai)`.
 - Accept offers above the aspiration threshold.
 - If a Pareto-optimal set exists, find the closest offer to the opponent’s last bid:
   - Accept if its utility for us is lower than the opponent’s latest offer.
@@ -71,7 +71,7 @@ Reject nearly all offers, except those providing at least 1.5 times advantage to
 
 **Last Resort Segment (Final Steps):**
 
-- In the last 10 steps, consider outcomes below min(Nash, Kalai) if they exceed the threshold.
+- In the last 10 steps, consider outcomes below `min(Nash, Kalai)` if they exceed the threshold.
 - In the final two steps, prioritize securing any agreement above our reserved value, accepting any such offer to avoid unnecessary rejection.
 
 Our agent maximizes utility by identifying a candidate offer that maintains the opponent’s utility while improving our own. This ensures better agreements than those based on a static threshold, without harming the opponent’s position, ultimately securing a stronger deal.
@@ -86,11 +86,11 @@ Our bidding strategy, like our acceptance strategy, is divided into three phases
 
 **Immediate Return: Using the Next Offer**
 
-If a next_offer was identified in the acceptance strategy, it is immediately returned. This Pareto-optimal offer maximizes our utility while keeping the opponent’s utility similar to their last offer, increasing acceptance likelihood. This is the only offer returned immediately, all other conditions are evaluated before finalizing the bid.
+If a `next_offer` was identified in the acceptance strategy, it is immediately returned. This Pareto-optimal offer maximizes our utility while keeping the opponent’s utility similar to their last offer, increasing acceptance likelihood. This is the only offer returned immediately, all other conditions are evaluated before finalizing the bid.
 
 **Main Bidding Phase: Selecting the Best Offer** 
 
-If no next_offer exists, the agent evaluates offers sequentially:
+If no `next_offer` exists, the agent evaluates offers sequentially:
 - Prioritize Pareto-optimal offers above the current aspiration threshold, selecting the closest one to maintain controlled concession.
 - If no Pareto-optimal option is available, bid our highest utility offer.
 - Identify the offer closest to the opponent’s predicted reservation value. If it provides us a greater advantage than the opponent and has a higher utility than any previous offer, we bid it.
@@ -98,9 +98,9 @@ If no next_offer exists, the agent evaluates offers sequentially:
 **Failsafe: Securing Agreement & Avoiding Bad Bids**
 
 To prevent losing agreements or making poor bids, we apply safeguards:
-- If the selected offer is below min_offer (min(Nash, Kalai)) and more than 10 steps remain, we replace it with min_offer.
+- If the selected offer is below `min_offer = (min(Nash, Kalai))` and more than 10 steps remain, we replace it with `min_offer`.
 - In the last two steps, bid the closest offer to our reserved value from the opponent’s previous offers, increasing agreement likelihood.
-- If no valid offer is found, default to the highest utility offer (ufun.best()).
+- If no valid offer is found, default to the highest utility offer `(ufun.best())`.
 
 Once all conditions are evaluated, the selected offer is returned as our bid. This ensures our agent pursues optimal Pareto agreements, explores potential better outcomes, and avoids losing deals in the final moments.
 
@@ -114,7 +114,7 @@ Our agent predicts the opponent’s **reserved value** by tracking the utility s
 - If the opponent concedes very little, we set our exponent to 7× their average concession exponent.
 - Otherwise, we set our exponent 1 point higher than theirs, maintaining a balanced but strategic concession rate.
 - If insufficient offers exist to compute a mean, we estimate their reserved value as half the lowest utility score among their offers.
-- 
+  
 Finally, we update the opponent’s rational outcomes based on the revised reserved value:
 - If their reserved value increases, we remove irrational outcomes.
 - If it decreases, we regenerate the rational outcome set.
